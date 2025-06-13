@@ -254,18 +254,14 @@ export default function ISLConverter() {
     stopSequence();
 
     try {
-      // Mock API delay & data for demo
-      setTimeout(() => {
-        const mockData = sentence.split(" ").map((word) => ({
-          label: word,
-          data: "placeholder",
-        }));
-        setImages(mockData);
-        setLoading(false);
-      }, 1500);
-    } catch (err) {
-      setError("Failed to fetch ISL images. Is the backend running?");
-      console.error(err);
+      const response = await axios.post("http://localhost:5000/convert", {
+        sentence: sentence.trim(),
+      });
+      setImages(response.data);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to fetch ISL images. Is the backend running?");
+    } finally {
       setLoading(false);
     }
   };
