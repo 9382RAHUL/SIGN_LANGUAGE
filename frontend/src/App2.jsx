@@ -254,14 +254,18 @@ export default function ISLConverter() {
     stopSequence();
 
     try {
-      const response = await axios.post("http://localhost:5000/convert", {
-        sentence: sentence.trim(),
-      });
-      setImages(response.data);
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to fetch ISL images. Is the backend running?");
-    } finally {
+      // Mock API delay & data for demo
+      setTimeout(() => {
+        const mockData = sentence.split(" ").map((word) => ({
+          label: word,
+          data: "placeholder",
+        }));
+        setImages(mockData);
+        setLoading(false);
+      }, 1500);
+    } catch (err) {
+      setError("Failed to fetch ISL images. Is the backend running?");
+      console.error(err);
       setLoading(false);
     }
   };
@@ -556,9 +560,7 @@ export default function ISLConverter() {
               {currentIndex >= 0 && currentIndex < images.length ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <img
-                    src={`https://via.placeholder.com/300?text=${encodeURIComponent(
-                      images[currentIndex].label
-                    )}`}
+                    src={`data:image/gif;base64,${images[currentIndex].data}`}
                     alt={images[currentIndex].label}
                     className="object-contain transition-opacity duration-300"
                     width={300}
