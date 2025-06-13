@@ -188,7 +188,7 @@
 // }
 
 import React, { useState, useEffect, useRef } from "react";
-
+import axios from "axios";
 export default function ISLConverter() {
   const [sentence, setSentence] = useState("");
   const [images, setImages] = useState([]);
@@ -240,35 +240,58 @@ export default function ISLConverter() {
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
+  // const handleConvert = async () => {
+  //   if (!sentence.trim()) return;
+
+  //   setLoading(true);
+  //   setCurrentIndex(-1);
+  //   setImages([]);
+  //   stopSequence();
+
+  //   try {
+  //     const response = await axios.post("http://localhost:5000/convert", {
+  //       sentence: sentence.trim(),
+  //     });
+  //     setImages(response.data);
+  //     console.log("ISL images:", response.data);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     alert("Failed to fetch ISL images. Is the backend running?");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleConvert = async () => {
-    if (!sentence.trim()) {
-      setError("Please enter a sentence");
-      inputRef.current?.focus();
-      return;
+  if (!sentence.trim()) return;
+
+  setLoading(true);
+  setCurrentIndex(-1);
+  setImages([]);
+  stopSequence();
+
+  try {
+    const response = await axios.post("http://localhost:5000/convert", {
+      sentence: sentence.trim(),
+    });
+
+    if (response.data && response.data.length > 0) {
+      setImages(response.data);
+      setCurrentIndex(0);
+      setCurrentLabel(response.data[0].label || "");
+      startSequence();
+    } else {
+      alert("No ISL images found for this sentence.");
     }
 
-    setLoading(true);
-    setCurrentIndex(-1);
-    setImages([]);
-    setError("");
-    stopSequence();
-
-    try {
-      // Mock API delay & data for demo
-      setTimeout(() => {
-        const mockData = sentence.split(" ").map((word) => ({
-          label: word,
-          data: "placeholder",
-        }));
-        setImages(mockData);
-        setLoading(false);
-      }, 1500);
-    } catch (err) {
-      setError("Failed to fetch ISL images. Is the backend running?");
-      console.error(err);
-      setLoading(false);
-    }
-  };
+    console.log("ISL images:", response.data);
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Failed to fetch ISL images. Is the backend running?");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     stopSequence();
@@ -348,7 +371,11 @@ export default function ISLConverter() {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v18l15-9L5 3z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 3v18l15-9L5 3z"
+      />
     </svg>
   );
   const PauseIcon = () => (
@@ -393,9 +420,21 @@ export default function ISLConverter() {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 9a4 4 0 010 6" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 6a8 8 0 010 12" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M11 5L6 9H2v6h4l5 4V5z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 9a4 4 0 010 6"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M18 6a8 8 0 010 12"
+      />
     </svg>
   );
   const ChevronLeftIcon = () => (
@@ -445,10 +484,15 @@ export default function ISLConverter() {
       {/* Left panel */}
       <div className="flex-1 p-6 md:p-10 border-r border-gray-200">
         <h1 className="text-3xl font-bold mb-2 text-gray-800">ISL Converter</h1>
-        <p className="text-gray-600 mb-6">Convert text to Indian Sign Language</p>
+        <p className="text-gray-600 mb-6">
+          Convert text to Indian Sign Language
+        </p>
 
         <div className="mb-6">
-          <label htmlFor="sentence" className="block mb-2 font-medium text-gray-700">
+          <label
+            htmlFor="sentence"
+            className="block mb-2 font-medium text-gray-700"
+          >
             Enter a sentence:
           </label>
           <div className="relative">
@@ -464,7 +508,10 @@ export default function ISLConverter() {
               maxLength={maxChars}
               aria-describedby="char-count"
             />
-            <span id="char-count" className="absolute bottom-2 right-3 text-xs text-gray-500">
+            <span
+              id="char-count"
+              className="absolute bottom-2 right-3 text-xs text-gray-500"
+            >
               {charCount}/{maxChars}
             </span>
           </div>
@@ -521,7 +568,9 @@ export default function ISLConverter() {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-lg font-medium mb-3 text-gray-700">Try these examples:</h2>
+          <h2 className="text-lg font-medium mb-3 text-gray-700">
+            Try these examples:
+          </h2>
           <div className="flex flex-wrap gap-2">
             {examples.map((example, index) => (
               <button
@@ -560,13 +609,11 @@ export default function ISLConverter() {
               {currentIndex >= 0 && currentIndex < images.length ? (
                 <div className="w-full h-full flex items-center justify-center">
                   <img
-                    src={`https://via.placeholder.com/300?text=${encodeURIComponent(
-                      images[currentIndex].label
-                    )}`}
+                    src={`data:image/${
+                      images[currentIndex].type === "gif" ? "gif" : "png"
+                    };base64,${images[currentIndex].data}`}
                     alt={images[currentIndex].label}
-                    className="object-contain transition-opacity duration-300"
-                    width={300}
-                    height={300}
+                    className="object-contain transition-opacity duration-300 max-h-[300px]"
                   />
                 </div>
               ) : loading ? (
@@ -577,7 +624,9 @@ export default function ISLConverter() {
               ) : (
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                   <p className="text-gray-400 mb-2">No signs to display</p>
-                  <p className="text-sm text-gray-400">Enter a sentence and click "Convert" to see sign language</p>
+                  <p className="text-sm text-gray-400">
+                    Enter a sentence and click "Convert" to see sign language
+                  </p>
                 </div>
               )}
             </div>
@@ -618,7 +667,8 @@ export default function ISLConverter() {
 
           {images.length > 0 && (
             <div className="mt-4 text-center text-sm text-gray-500">
-              Click the arrows to navigate manually or use the play/pause controls
+              Click the arrows to navigate manually or use the play/pause
+              controls
             </div>
           )}
         </div>
