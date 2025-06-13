@@ -13,12 +13,19 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk import pos_tag
 
-# Download necessary NLTK resources
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('wordnet')
-nltk.download('stopwords')
-nltk.download('omw-1.4')
+# Conditionally download NLTK resources if not already present
+def download_nltk_resource(resource, path):
+    try:
+        nltk.data.find(path)
+    except LookupError:
+        nltk.download(resource)
+
+download_nltk_resource('punkt', 'tokenizers/punkt')
+download_nltk_resource('averaged_perceptron_tagger', 'taggers/averaged_perceptron_tagger')
+download_nltk_resource('wordnet', 'corpora/wordnet')
+download_nltk_resource('stopwords', 'corpora/stopwords')
+download_nltk_resource('omw-1.4', 'corpora/omw-1.4')
+
 
 app = Flask(__name__)
 CORS(app)
@@ -51,6 +58,29 @@ for dir_name in os.listdir(DATASET_FOLDER):
 print("✅ Dataset Loaded:")
 print("  -> Word/Alphabet directories:", len(image_files_map))
 print("  -> Sentences loaded:", len(sentence_image_map))
+
+# =====================
+# ChromaDB Integration
+# =====================
+chroma_client = chromadb.Client(Settings(anonymized_telemetry=False))
+
+# Extract all sentence keys (these are folder names under "Sentences")
+sentence_array = list(sentence_image_map.keys())
+
+# Create Chroma collection for sentence matching
+collection = chroma_client.get_or_create_collection(
+    name="isl_sentences",
+    metadata={"hnsw:space": "ip"}
+)
+
+# Only add if not already added
+if collection.count() == 0:
+    collection.add(
+        documents=sentence_array,
+        ids=[str(i) for i in range(len(sentence_array))]
+    )
+    print("✅ ChromaDB sentence collection added.")
+
 
 # =====================
 # NLP Preprocessing
@@ -88,15 +118,26 @@ def convert_to_isl():
 
     result_images = []
 
-    # 1. Try Full Sentence Match
-    if input_sentence in sentence_image_map:
-        gif_path = sentence_image_map[input_sentence]
+    # 1. Try Semantic Match using ChromaDB
+    results = collection.query(query_texts=[input_sentence], n_results=3)
+
+    found_sentence = ''
+    min_score = 1.0
+
+    for doc, score in zip(results['documents'][0], results['distances'][0]):
+        if score < 0.15 and score < min_score:
+            found_sentence = doc
+            min_score = score
+
+    if found_sentence and found_sentence in sentence_image_map:
+        gif_path = sentence_image_map[found_sentence]
         result_images.append({
             "type": "gif",
-            "label": input_sentence,
+            "label": found_sentence,
             "data": image_to_base64(gif_path),
         })
         return jsonify(result_images)
+
 
     # 2. Process sentence into words
     processed_words = process_sentence(input_sentence)
