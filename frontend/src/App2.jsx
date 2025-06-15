@@ -147,6 +147,36 @@
         //   )}
         // </div>
 
+//         <div className="flex gap-4 mt-6">
+//           <button
+//             onClick={handleConvert}
+//             disabled={loading}
+//             className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50 transition"
+//           >
+//             Convert
+//           </button>
+
+//           {images.length > 0 && (
+//             <>
+//               <button
+//                 onClick={handlePauseResume}
+//                 className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition"
+//                 aria-label={isPaused ? "Resume playback" : "Pause playback"}
+//               >
+//                 {isPaused ? "▶️ Resume" : "⏸ Pause"}
+//               </button>
+//               <button
+//                 onClick={handlePlayAgain}
+//                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+//                 aria-label="Play again"
+//               >
+//                 🔄 Play Again
+//               </button>
+//             </>
+//           )}
+//         </div>
+
+
 //         {loading && <p className="mt-4 text-gray-600">Loading...</p>}
 //       </div>
 
@@ -698,7 +728,7 @@ export default function ISLConverter() {
         </div>
       </div>
       </div>
-      {/* Left panel */}
+  
 
     </div>
   );
