@@ -187,12 +187,18 @@ for dir_name in os.listdir(DATASET_FOLDER):
             folder_path = os.path.join(sentences_dir, sentence_folder)
             if os.path.isdir(folder_path):
                 for file in os.listdir(folder_path):
-                    if file.endswith('.gif'):
+                    if file.lower().endswith(('.gif', '.mp4', '.avi', '.mvi', '.mov', '.webm')):
                         sentence_key = sentence_folder.lower().strip()
                         sentence_image_map[sentence_key] = os.path.join(folder_path, file)
+
     elif os.path.isdir(dir_path):
-        file_paths = [os.path.join(dir_path, f) for f in os.listdir(dir_path)]
-        image_files_map[dir_name.lower()] = file_paths
+        media_files = []
+        for f in os.listdir(dir_path):
+            if f.lower().endswith(('.gif', '.png', '.jpg', '.jpeg', '.mp4', '.avi', '.mvi', '.webm')):
+                media_files.append(os.path.join(dir_path, f))
+        if media_files:
+            image_files_map[dir_name.lower()] = media_files
+
 
 print("✅ Dataset Loaded:")
 print("  -> Word/Alphabet directories:", len(image_files_map))
@@ -243,9 +249,16 @@ def process_sentence(sentence):
 # =====================
 # Convert Image to Base64
 # =====================
-def image_to_base64(image_path):
-    with open(image_path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+def media_to_base64(media_path):
+    with open(media_path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode("utf-8")
+    ext = os.path.splitext(media_path)[1].lower()
+    if ext in ['.gif', '.png', '.jpg', '.jpeg']:
+        media_type = 'gif' if ext == '.gif' else 'image'
+    else:
+        media_type = 'video'
+    return media_type, encoded
+
 
 # =====================
 # API Route
@@ -270,11 +283,12 @@ def convert_to_isl():
             min_score = score
 
     if found_sentence and found_sentence in sentence_image_map:
-        gif_path = sentence_image_map[found_sentence]
+        media_path = sentence_image_map[found_sentence]
+        media_type, encoded_data = media_to_base64(media_path)
         result_images.append({
-            "type": "gif",
+            "type": media_type,
             "label": found_sentence,
-            "data": image_to_base64(gif_path),
+            "data": encoded_data,
         })
         return jsonify(result_images)
 
@@ -288,23 +302,26 @@ def convert_to_isl():
 
         # 2a. Try word-level match
         if word_lower in image_files_map:
-            image_path = image_files_map[word_lower][0]
+            media_path = image_files_map[word_lower][0]
+            media_type, encoded_data = media_to_base64(media_path)
             result_images.append({
-                "type": "image",
+                "type": media_type,
                 "label": word_lower,
-                "data": image_to_base64(image_path)
+                "data": encoded_data
             })
         else:
             # 2b. Fallback to characters
             for char in word.upper():
                 char_lower = char.lower()
                 if char_lower in image_files_map:
-                    image_path = image_files_map[char_lower][0]
+                    media_path = image_files_map[char_lower][0]
+                    media_type, encoded_data = media_to_base64(media_path)
                     result_images.append({
-                        "type": "image",
+                        "type": media_type,
                         "label": char_lower,
-                        "data": image_to_base64(image_path)
+                        "data": encoded_data
                     })
+
 
     return jsonify(result_images)
 
