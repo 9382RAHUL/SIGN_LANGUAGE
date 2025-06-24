@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, use } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+
 export default function ISLConverter() {
     const [sentence, setSentence] = useState("");
     const [images, setImages] = useState([]);
@@ -9,6 +12,7 @@ export default function ISLConverter() {
     const [currentLabel, setCurrentLabel] = useState("");
     const [error, setError] = useState("");
     const [charCount, setCharCount] = useState(0);
+    const navigate = useNavigate();
     const maxChars = 100;
 
     const intervalRef = useRef(null);
@@ -51,28 +55,6 @@ export default function ISLConverter() {
         if (intervalRef.current) clearInterval(intervalRef.current);
     };
 
-    // const handleConvert = async () => {
-    //   if (!sentence.trim()) return;
-
-    //   setLoading(true);
-    //   setCurrentIndex(-1);
-    //   setImages([]);
-    //   stopSequence();
-
-    //   try {
-    //     const response = await axios.post("http://localhost:5000/convert", {
-    //       sentence: sentence.trim(),
-    //     });
-    //     setImages(response.data);
-    //     console.log("ISL images:", response.data);
-    //   } catch (error) {
-    //     console.error("Error:", error);
-    //     alert("Failed to fetch ISL images. Is the backend running?");
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-
     const handleConvert = async () => {
         if (!sentence.trim()) return;
 
@@ -103,6 +85,14 @@ export default function ISLConverter() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) {   
+            navigate("/signin");
+            return;
+        }
+    }, []);
 
     useEffect(() => {
         stopSequence();
@@ -312,7 +302,8 @@ export default function ISLConverter() {
         </svg>
     );
 
-    return (
+    if (localStorage.getItem("token")) {
+        return (
         // <div className=" md:flex-row  bg-gradient-to-r from-[#1ED6B9] to-[#5C4DF4] ">
         <div className=" md:flex-row  bg-gradient-to-r from-indigo-900 to-blue-500 ">
             <div className="w-1/2 text-white ">
@@ -526,4 +517,22 @@ export default function ISLConverter() {
 
         </div>
     );
+    } else {
+        navigate("/signin");
+        return (
+            <div className="flex items-center justify-center h-screen bg-gradient-to-r from-indigo-900 to-blue-500">
+                <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+                    <AlertIcon />
+                    <h2 className="text-xl font-semibold mb-4">Access Denied</h2>
+                    <p className="text-gray-600 mb-6">Please log in to access the ISL Converter.</p>
+                    <button
+                        onClick={() => navigate("/signin")}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all"
+                    >
+                        Go to Sign In
+                    </button>
+                </div>
+            </div>
+        );
+    }
 }
